@@ -1,0 +1,150 @@
+<html>
+<head>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" type="text/css">
+  <script src="https://js.arcgis.com/4.32/init.js"></script>
+  <style>
+      html,
+      body,
+      #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      }
+
+      #coor {
+      position: absolute;
+      left: 0;
+      bottom: 17px;
+      background-color: white;
+      padding: 2px;
+      border: 1px solid black;
+      font-size: 12px;
+      }
+
+      #data_panel {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      background-color: blue;
+      padding: 2px;
+      font-size: 12px;
+      box-shadow: 5px 5px 10px #888888;
+      }
+
+      #data_panel input,
+      #data_panel label {
+      cursor: pointer;
+      }
+
+      #data_panel th {
+      text-align: left;
+      }
+
+      .landsdlogo {
+      width: 25px;
+      height: 25px;
+      display: inline-flex;
+      background: url(https://api.hkmapservice.gov.hk/mapapi/landsdlogo.jpg);
+      background-size: 25px;
+      margin-left: 4px;
+      }
+
+      .esri-attribution a {
+          color: black;
+      }
+
+      .esri-attribution {
+          width: auto !important;
+          left: auto !important;
+          background: none;
+          font-size: 12px;
+          font-family: sans-serif;
+          color: black;
+      }
+
+      .esri-attribution__powered-by {
+          display: none;
+      }
+  </style>
+  </head>
+  <body>
+  <div id="viewDiv">
+  </div>
+  </body>
+  <script>
+  var apikey = "3563972aa8fe4414837fb565333c5c47"; // Please replace by your own API KEY
+  var basemapURL = "https://api.hkmapservice.gov.hk/ags/map/basemap/WGS84";
+  require([
+      "esri/Map", "esri/views/SceneView",
+      "esri/layers/SceneLayer", "esri/Basemap",
+      "esri/Ground", "esri/layers/TileLayer",
+      "esri/layers/ElevationLayer", "esri/layers/SceneLayer",
+      "esri/core/urlUtils", "esri/views/MapView",
+      "esri/config",
+      "esri/geometry/SpatialReference", "esri/geometry/Point",
+      "esri/widgets/Compass"
+  ], function (Map, SceneView, SceneLayer, Basemap, Ground, TileLayer, ElevationLayer, SceneLayer,
+      urlUtils, MapView, esriConfig, SpatialReference, Point, Compass) {
+      esriConfig.request.trustedServers.push("https://api.hkmapservice.gov.hk");
+      esriConfig.request.trustedServers.push("https://3dapi.hkmapservice.gov.hk");
+      esriConfig.request.interceptors.push({
+      before: function (params) {
+          if (params.url.indexOf("https://api.hkmapservice.gov.hk") >= 0 || params.url.indexOf("https://3dapi.hkmapservice.gov.hk") >= 0) {
+          if (params.requestOptions.query) {
+              params.requestOptions.query.key = apikey
+          } else {
+              params.requestOptions.query = {
+              key: apikey
+              }
+          }
+          }
+      }
+      });
+      var basemap = new Basemap({
+      baseLayers: [
+          new TileLayer({
+          url: basemapURL,
+          copyright: "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer' target='_blank'>&copy; Map information from Lands Department<div class='landsdlogo'></div></a>"
+          })
+      ]
+      });
+      
+      var map = new Map({
+      basemap: basemap
+      });
+      var scene = new SceneView({
+      container: "viewDiv",
+      map: map,
+      camera: {
+          position: {
+          longitude: 114.21602,
+          latitude: 21.91563,
+          z: 30000,
+          spatialReference: {
+              wkid: 3857
+          }
+          },
+          tilt: 55,
+          heading: 0
+      }
+      });
+      
+        // To retrieve the Seamless API services of the 3D Visualization Map API (Individualized models)
+        for(var index=1; index<=17; index++){
+            var url 
+              = `https://3dapi.hkmapservice.gov.hk/ags/i3s/individual/WGS84/${index}/Terrain/SceneServer`
+
+            var mySceneLayer = new SceneLayer({
+            url: url
+            });
+            map.add(mySceneLayer);
+        }
+      
+     
+      
+  });
+
+  </script>
+
+</html>
