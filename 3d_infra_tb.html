@@ -1,149 +1,136 @@
 <html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" type="text/css">
+    <head>
+        <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" type="text/css">
   <script src="https://js.arcgis.com/4.32/init.js"></script>
-  <style>
-      html,
-      body,
-      #viewDiv {
-      padding: 0;
-      margin: 0;
-      height: 100%;
-      width: 100%;
-      }
+        <style>
+          html, body,
+          #viewDiv {
+          padding: 0;
+          margin: 0;
+          height: 100%;
+          width: 100%;
+          }
 
-      #coor {
-      position: absolute;
-      left: 0;
-      bottom: 17px;
-      background-color: white;
-      padding: 2px;
-      border: 1px solid black;
-      font-size: 12px;
-      }
+          .landsdlogo {
+            width: 25px;
+            height: 25px;
+            display: inline-flex;
+            background: url(https://api.hkmapservice.gov.hk/mapapi/landsdlogo.jpg);
+            background-size: 25px;
+            margin-left: 4px;
+            }
 
-      #data_panel {
-      position: absolute;
-      right: 10px;
-      top: 10px;
-      background-color: blue;
-      padding: 2px;
-      font-size: 12px;
-      box-shadow: 5px 5px 10px #888888;
-      }
+          .esri-attribution a {
+              color: black;
+          }
 
-      #data_panel input,
-      #data_panel label {
-      cursor: pointer;
-      }
+          .esri-attribution {
+              width: auto !important;
+              left: auto !important;
+              background: none;
+              font-size: 12px;
+              font-family: sans-serif;
+              color: black;
+          }
 
-      #data_panel th {
-      text-align: left;
-      }
-
-      .landsdlogo {
-      width: 25px;
-      height: 25px;
-      display: inline-flex;
-      background: url(https://api.hkmapservice.gov.hk/mapapi/landsdlogo.jpg);
-      background-size: 25px;
-      margin-left: 4px;
-      }
-
-      .esri-attribution a {
-          color: black;
-      }
-
-      .esri-attribution {
-          width: auto !important;
-          left: auto !important;
-          background: none;
-          font-size: 12px;
-          font-family: sans-serif;
-          color: black;
-      }
-
-      .esri-attribution__powered-by {
-          display: none;
-      }
-  </style>
-  </head>
+          .esri-attribution__powered-by {
+              display: none;
+          }
+        </style>
+    </head>
   <body>
-  <div id="viewDiv">
-  </div>
-  </body>
-  <script>
-  var apikey = "3563972aa8fe4414837fb565333c5c47"; // Please replace by your own API KEY
-  var serviceBm = "https://api.hkmapservice.gov.hk/osm/xyz/HKCoast/WGS84";
-
-  require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/WebTileLayer"],
-      function (esriConfig, Map, MapView, WebTileLayer) {
-          esriConfig.request.interceptors.push({
-              before: function (params) {
-                  if (params.url.indexOf("api.hkmapservice.gov.hk") >= 0) {
-                      if (params.requestOptions.query) {
-                          params.requestOptions.query.key = apikey
-                      } else {
-                          params.requestOptions.query = { key: apikey }
-                      }
-                  }
-              },
-              after: function (response) {
-                  if (!response.ssl) {
-                      response.ssl = true;
-                  }
-              }
-          });
-
-      var baseLayer = new WebTileLayer({
-          urlTemplate: serviceBm + "/tile/{level}/{col}/{row}.png?key=" + apikey,
+    <div id="viewDiv"></div>
+    <div id="landsdlogo" class="landsdlogo"></div>
+    </body>
+    <script>
+    var apikey = "3563972aa8fe4414837fb565333c5c47"; // Please replace by your own API KEY
+    var basemapURL = "https://api.hkmapservice.gov.hk/ags/map/basemap/WGS84";
+    var groundURL = "https://api.hkmapservice.gov.hk/ags/image/hkterrain/WGS84";
+    var meshModelURL = "https://3dapi.hkmapservice.gov.hk/ags/i3s/meshmodel/WGS84/All/SceneServer";
+    require([
+      "esri/Map", "esri/views/SceneView",
+      "esri/layers/IntegratedMeshLayer", "esri/Basemap",
+      "esri/Ground", "esri/layers/TileLayer", "esri/layers/ElevationLayer",
+      "esri/core/urlUtils", "esri/views/MapView", "esri/config",
+      "esri/geometry/SpatialReference", "esri/geometry/Point"
+    ], function(Map, SceneView, IntegratedMeshLayer, Basemap, Ground, 
+      TileLayer, ElevationLayer, urlUtils,
+      MapView, esriConfig, SpatialReference, Point) {
+    esriConfig.request.trustedServers.push("https://api.hkmapservice.gov.hk");
+    esriConfig.request.trustedServers.push("https://3dapi.hkmapservice.gov.hk");
+    esriConfig.request.interceptors.push({
+      before: function(params) {
+        if (params.url.indexOf("https://api.hkmapservice.gov.hk") >= 0 || params.url.indexOf("https://3dapi.hkmapservice.gov.hk") >= 0) {
+          if (params.requestOptions.query) {
+            params.requestOptions.query.key = apikey
+          } else {
+            params.requestOptions.query = {
+              key: apikey
+            }
+          }
+        }
+      },
+      after: function(response) {
+        if (!response.ssl) {
+        }
+      }
+    });
+    urlUtils.removeQueryParameters = function(a, c) {
+      return a;
+    }
+    var basemap = new Basemap({
+      baseLayers: [
+        new TileLayer({
+          url: basemapURL,
           copyright: "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer' target='_blank'>&copy; Map information from Lands Department<div class='landsdlogo'></div></a>"
-      });
+        })
+      ]
+    });
+    var ground = new Ground({
+      layers: [
+        new ElevationLayer({
+          url: groundURL
+        })
+      ]
+    });
 
-      var map = new Map({
-          layers: [baseLayer]
-      });
+    var map = new Map({
+      basemap: basemap,
+      ground: ground
+    });
 
-/*      var view = new MapView({
-          container: "viewDiv",
-          map: map,
-          center: [114.118430, 22.335269],
-          zoom: 11
-      });      */
+    
+    // To retrieve the Seamless API services of 3D Visualisation Map API (Tile-based models)
+    for(var index=1; index<=17; index++){
+        var locationUrl 
+          = `https://3dapi.hkmapservice.gov.hk/ags/i3s/meshmodel/WGS84/${index}/SceneServer`
+        var mySceneLayer = new IntegratedMeshLayer({
+          url: locationUrl,
+          layerId: 0
+        });
+
+        map.add(mySceneLayer);
+      }
       
-      var scene = new SceneView({
+
+    var scene = new SceneView({
       container: "viewDiv",
       map: map,
       camera: {
-          position: {
-          longitude: 114.21602,
-          latitude: 21.91563,
-          z: 30000,
+        position: {
+          longitude: 114.1168,
+          latitude: 22.37005,
+          z: 150000,
           spatialReference: {
-              wkid: 3857
+            wkid: 3857
           }
-          },
-          tilt: 55,
-          heading: 0
+        },
+        tilt: 0,
+        heading: 0
       }
-      });
-      
-        // To retrieve the Seamless API services of the 3D Visualization Map API (Individualized models)
-        for(var index=1; index<=17; index++){
-            var url 
-              = `https://3dapi.hkmapservice.gov.hk/ags/i3s/individual/WGS84/${index}/InfrastructureTile/SceneServer`
+    });     
 
-            var mySceneLayer = new SceneLayer({
-            url: url
-            });
-            map.add(mySceneLayer);
-        }
-      
-     
-      
-  });
-
-  </script>
-
-</html>
+    });
+    </script>
+  </html>
+    
