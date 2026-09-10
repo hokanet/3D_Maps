@@ -1,0 +1,150 @@
+<html>
+<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.105.0/Build/Cesium/Widgets/widgets.css";
+  type="text/css">
+  <script src="https://cdn.jsdelivr.net/npm/cesium@1.105.0/Build/Cesium/Cesium.js"></script>
+  <style>
+  
+  .cesium-widget-credits > div{
+        padding: 5px;
+        font-family: "arial";
+        font-size: 12px;
+        line-height: 20px;
+    }
+    div.cesium-widget-credits > div > a,
+    div.cesium-widget-credits > div > a:visited{
+        color: #333333;
+        text-shadow: none;
+    }
+    .cesium-credit-logoContainer{
+        display: none !important; 
+    }
+
+  html,
+  body,
+  #cesiumContainer {
+    
+      width: 100%;
+      height: 100%;
+      margin: 0 0;
+      overflow: hidden;
+  }
+  
+  </style>
+</head>
+
+<body>
+  <div id="cesiumContainer"></div>
+ 
+</body>
+<script>
+  const apikey = "3563972aa8fe4414837fb565333c5c47"; //Please  use the 'Apply for API KEY'
+  const mapapiCredit = '<div style="display:flex"><a href="https://api.portal.hkmapservice.gov.hk/disclaimer" target="_blank">© Map information from Lands Department</a>&nbsp;<img style="height:20px;" src="https://api.hkmapservice.gov.hk/mapapi/landsdlogo.jpg"/></div>'
+  XMLHttpRequest.prototype.openRaw = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function (method, url, asyn, usr, pwd) {
+  if (url.indexOf("https://api.hkmapservice.gov.hk") >= 0 || url.indexOf("https://3dapi.hkmapservice.gov.hk") >= 0)
+      url += (url.indexOf("?") >= 0 ? "&" : "?") + "key=" + apikey;
+  this.openRaw(method, url, asyn, usr, pwd);
+  };
+  const imageryProvider = new Cesium.UrlTemplateImageryProvider({
+      url: "https://api.hkmapservice.gov.hk/osm/xyz/basemap/WGS84/tile/{z}/{x}/{y}.png",
+      credit: mapapiCredit
+  })
+  const viewer = new Cesium.Viewer("cesiumContainer", {
+  homeButton: false,
+  infoBox: true,
+  fullscreenButton: false,
+  geocoder: false,
+  useBrowserRecommendedResolution: false,
+  skyAtmosphere: false,
+  baseLayerPicker: false,
+  scene3DOnly: true,
+  timeline: false,
+  animation: false,
+  terrainProvider: new Cesium.CesiumTerrainProvider({
+      url: "https://api.hkmapservice.gov.hk/czm/qtmesh/hkterrain/WGS84"
+  }),
+  mapProjection: new Cesium.WebMercatorProjection(),
+  imageryProvider: imageryProvider
+
+  });
+document.querySelector(".cesium-widget-credits").innerHTML = imageryProvider.credit.html;
+
+      var url= `https://3dapi.hkmapservice.gov.hk/czm/3dtiles/individual/WGS84/Building/tileset.json`
+      const model = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
+        url: url
+        }));
+      
+
+  viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees( 114.21602, 21.91563, 30000),
+
+      orientation: {
+      heading: Cesium.Math.toRadians(0),
+      pitch: Cesium.Math.toRadians(-35),  // note the pitch value is negative
+      roll: 0.0
+      },
+      duration: 0,
+  });
+  
+ 
+    const fragmentShaderSource = `
+    uniform sampler2D colorTexture;
+    in vec2 v_textureCoordinates;
+    uniform vec4 highlight;
+    void main() {
+        vec4 color = texture(colorTexture, v_textureCoordinates);
+        if (czm_selected()) {
+            vec3 highlighted = highlight.a * highlight.rgb + (1.0 - highlight.a) * color.rgb;
+            out_FragColor = vec4(highlighted, 1.0);
+        } else { 
+            out_FragColor = color;
+        }
+    }
+    `;
+
+    const stage = viewer.scene.postProcessStages.add(
+        new Cesium.PostProcessStage({
+            fragmentShader: fragmentShaderSource,
+            uniforms: {
+                highlight: function () {
+                    return new Cesium.Color(0.0, 1.0, 1.0, 0.3);
+                },
+            },
+        })
+    );
+    stage.selected = [];
+    const selectedEntity = new Cesium.Entity();
+    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    handler.setInputAction(function (movement) {
+        const picked = viewer.scene.pick(movement.position);
+        if (!Cesium.defined(picked)) {
+            return;
+        }
+        const url = picked?.content?.url
+        const modelId = url.match(/\/[^\/]*\.(glb|b3dm)/)[0].substring(1, 19)
+        const isIndividual = url.indexOf("/individual") > 0
+        const isBuilding = url.indexOf("/individual") > 0
+        let html = ""
+        if (isIndividual && isBuilding) {
+            if(picked && picked.detail && picked.detail.model)
+                stage.selected = [picked.detail.model]
+            
+            const buildingMetadata = picked?.content?.metadata
+            if (buildingMetadata) {
+                html = `<table class="cesium-infoBox-defaultTable">`
+                html += `<tr><th>Model ID</th><td>${buildingMetadata.getProperty("ModelID")}</td></tr>`;
+                html += `<tr><th>Building CSUID</th><td>${buildingMetadata.getProperty("BuildingCSUID")}</td></tr>`;
+                html += `<tr><th>English Building Name</th><td>${buildingMetadata.getProperty("ENGLISHBUILDINGNAME")}</td></tr>`;
+                html += `<tr><th>Chinese Building Name</th><td>${buildingMetadata.getProperty("CHINESEBUILDINGNAME")}</td></tr>`;
+                html += `</table>`
+            }
+        }
+        selectedEntity.description = html
+        selectedEntity.name = modelId
+        viewer.selectedEntity = selectedEntity
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    
+</script>
+
+</html>     
