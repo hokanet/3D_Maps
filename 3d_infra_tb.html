@@ -74,35 +74,35 @@
   </body>
   <script>
   var apikey = "3563972aa8fe4414837fb565333c5c47"; // Please replace by your own API KEY
-        var serviceBm = "https://api.hkmapservice.gov.hk/osm/xyz/HKCoast/WGS84";
+  var serviceBm = "https://api.hkmapservice.gov.hk/osm/xyz/HKCoast/WGS84";
 
-        require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/WebTileLayer"],
-            function (esriConfig, Map, MapView, WebTileLayer) {
-                esriConfig.request.interceptors.push({
-                    before: function (params) {
-                        if (params.url.indexOf("api.hkmapservice.gov.hk") >= 0) {
-                            if (params.requestOptions.query) {
-                                params.requestOptions.query.key = apikey
-                            } else {
-                                params.requestOptions.query = { key: apikey }
-                            }
-                        }
-                    },
-                    after: function (response) {
-                        if (!response.ssl) {
-                            response.ssl = true;
-                        }
-                    }
-                });
+  require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/WebTileLayer"],
+      function (esriConfig, Map, MapView, WebTileLayer) {
+          esriConfig.request.interceptors.push({
+              before: function (params) {
+                  if (params.url.indexOf("api.hkmapservice.gov.hk") >= 0) {
+                      if (params.requestOptions.query) {
+                          params.requestOptions.query.key = apikey
+                      } else {
+                          params.requestOptions.query = { key: apikey }
+                      }
+                  }
+              },
+              after: function (response) {
+                  if (!response.ssl) {
+                      response.ssl = true;
+                  }
+              }
+          });
 
-                var baseLayer = new WebTileLayer({
-                    urlTemplate: serviceBm + "/tile/{level}/{col}/{row}.png?key=" + apikey,
-                    copyright: "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer' target='_blank'>&copy; Map information from Lands Department<div class='landsdlogo'></div></a>"
-                });
+      var baseLayer = new WebTileLayer({
+          urlTemplate: serviceBm + "/tile/{level}/{col}/{row}.png?key=" + apikey,
+          copyright: "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer' target='_blank'>&copy; Map information from Lands Department<div class='landsdlogo'></div></a>"
+      });
 
-                var map = new Map({
-                    layers: [baseLayer]
-                });
+      var map = new Map({
+          layers: [baseLayer]
+      });
       var scene = new SceneView({
       container: "viewDiv",
       map: map,
