@@ -39,6 +39,8 @@
 </body>
 <script>
   const apikey = "3563972aa8fe4414837fb565333c5c47"; //Please  use the 'Apply for API KEY'
+  //const apikey = "a5ce32f456ad45db98ff08089fed7153"; //PDIP API KEY'
+  //const apikey = "c6afe6bc9ef845099a3deaabaf6299ad"; //SPP3 API KEY'
   const mapapiCredit = '<div style="display:flex"><a href="https://api.portal.hkmapservice.gov.hk/disclaimer" target="_blank">© Map information from Lands Department</a>&nbsp;<img style="height:20px;" src="https://api.hkmapservice.gov.hk/mapapi/landsdlogo.jpg"/></div>'
   XMLHttpRequest.prototype.openRaw = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function (method, url, asyn, usr, pwd) {
@@ -57,7 +59,7 @@
   geocoder: false,
   useBrowserRecommendedResolution: false,
   skyAtmosphere: false,
-  baseLayerPicker: false,
+  baseLayerPicker: true,
   scene3DOnly: true,
   timeline: false,
   animation: false,
@@ -77,7 +79,7 @@ document.querySelector(".cesium-widget-credits").innerHTML = imageryProvider.cre
       
 
   viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees( 114.21602, 21.91563, 30000),
+      destination: Cesium.Cartesian3.fromDegrees( 114.21602, 21.91563, 15000),
 
       orientation: {
       heading: Cesium.Math.toRadians(0),
