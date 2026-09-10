@@ -74,45 +74,35 @@
   </body>
   <script>
   var apikey = "3563972aa8fe4414837fb565333c5c47"; // Please replace by your own API KEY
-  var basemapURL = "https://api.hkmapservice.gov.hk/ags/map/basemap/WGS84";
-  require([
-      "esri/Map", "esri/views/SceneView",
-      "esri/layers/SceneLayer", "esri/Basemap",
-      "esri/Ground", "esri/layers/TileLayer",
-      "esri/layers/ElevationLayer", "esri/layers/SceneLayer",
-      "esri/core/urlUtils", "esri/views/MapView",
-      "esri/config",
-      "esri/geometry/SpatialReference", "esri/geometry/Point",
-      "esri/widgets/Compass"
-  ], function (Map, SceneView, SceneLayer, Basemap, Ground, TileLayer, ElevationLayer, SceneLayer,
-      urlUtils, MapView, esriConfig, SpatialReference, Point, Compass) {
-      esriConfig.request.trustedServers.push("https://api.hkmapservice.gov.hk");
-      esriConfig.request.trustedServers.push("https://3dapi.hkmapservice.gov.hk");
-      esriConfig.request.interceptors.push({
-      before: function (params) {
-          if (params.url.indexOf("https://api.hkmapservice.gov.hk") >= 0 || params.url.indexOf("https://3dapi.hkmapservice.gov.hk") >= 0) {
-          if (params.requestOptions.query) {
-              params.requestOptions.query.key = apikey
-          } else {
-              params.requestOptions.query = {
-              key: apikey
-              }
-          }
-          }
-      }
-      });
-      var basemap = new Basemap({
-      baseLayers: [
-          new TileLayer({
-          url: basemapURL,
-          copyright: "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer' target='_blank'>&copy; Map information from Lands Department<div class='landsdlogo'></div></a>"
-          })
-      ]
-      });
-      
-      var map = new Map({
-      basemap: basemap
-      });
+        var serviceBm = "https://api.hkmapservice.gov.hk/osm/xyz/HKCoast/WGS84";
+
+        require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/WebTileLayer"],
+            function (esriConfig, Map, MapView, WebTileLayer) {
+                esriConfig.request.interceptors.push({
+                    before: function (params) {
+                        if (params.url.indexOf("api.hkmapservice.gov.hk") >= 0) {
+                            if (params.requestOptions.query) {
+                                params.requestOptions.query.key = apikey
+                            } else {
+                                params.requestOptions.query = { key: apikey }
+                            }
+                        }
+                    },
+                    after: function (response) {
+                        if (!response.ssl) {
+                            response.ssl = true;
+                        }
+                    }
+                });
+
+                var baseLayer = new WebTileLayer({
+                    urlTemplate: serviceBm + "/tile/{level}/{col}/{row}.png?key=" + apikey,
+                    copyright: "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer' target='_blank'>&copy; Map information from Lands Department<div class='landsdlogo'></div></a>"
+                });
+
+                var map = new Map({
+                    layers: [baseLayer]
+                });
       var scene = new SceneView({
       container: "viewDiv",
       map: map,
